@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Fantasy Cricket</title>
+  </head>
+  <body>
+    <h1>Fantasy Cricket Team Selection</h1>
+
+    <!-- Submit Team -->
+    <button onclick="submitTeam()">Submit Team</button>
+
+    <!-- Leaderboard Button -->
+    <button onclick="loadLeaderboard()">Show Leaderboard</button>
+
+    <script>
+      function submitTeam() {
+        fetch("/submitTeam", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            players: [
+              {
+                name: "Rohit",
+                team: "MI",
+                isForeign: false,
+                draftCount: 0,
+                runs: 40,
+                wickets: 0,
+                catches: 1,
+                result: "Win",
+              },
+            ],
+          }),
+        })
+          .then((res) => res.text())
+          .then((data) => alert(data));
+      }
+
+      function loadLeaderboard() {
+        fetch("/leaderboard")
+          .then((res) => res.json())
+          .then((data) => {
+            console.log(data);
+            alert("Top score: " + data[0].points);
+          });
+      }
+    </script>
+  </body>
+</html>
