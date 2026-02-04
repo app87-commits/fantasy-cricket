@@ -6,7 +6,10 @@ const db = require("./firebase"); // ✅ ADD HERE
 app.use(express.json());
 app.use(express.static("public"));
 
-app.listen(3000, () => console.log("Server running"));
+const fetch = require("node-fetch"); // install: npm install node-fetch
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Server running"));
+//app.listen(3000, () => console.log("Server running"));
 
 const MAX_FOREIGN = 4;
 const MAX_DRAFT = 2;
@@ -59,3 +62,19 @@ app.get("/leaderboard", async (req, res) => {
   leaderboard.sort((a, b) => b.points - a.points);
   res.json(leaderboard);
 });
+
+async function updateMatchStats() {
+  const response = await fetch(
+    "https://cricapi.com/api/matchScorecard?apikey=YOURKEY&id=MATCHID",
+  );
+  const data = await response.json();
+
+  // Loop players → update Firebase
+  for (let player of data.players) {
+    let points = calculatePoints(player);
+    await db
+      .collection("teams")
+      .doc(player.teamDocId)
+      .update({ points: points });
+  }
+}

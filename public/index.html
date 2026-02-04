@@ -47,3 +47,40 @@
     </script>
   </body>
 </html>
+
+<h2>Login</h2>
+<input type="email" id="email" placeholder="Email" />
+<input type="password" id="password" placeholder="Password" />
+<button onclick="login()">Login</button>
+<button onclick="signup()">Sign Up</button>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  function signup() {
+    const email = document.getElementById("email").value;
+    const pass = document.getElementById("password").value;
+    auth
+      .createUserWithEmailAndPassword(email, pass)
+      .then((user) => alert("Signed Up!"))
+      .catch((err) => alert(err.message));
+  }
+
+  function login() {
+    const email = document.getElementById("email").value;
+    const pass = document.getElementById("password").value;
+    auth
+      .signInWithEmailAndPassword(email, pass)
+      .then((user) => alert("Logged In!"))
+      .catch((err) => alert(err.message));
+  }
+</script>
