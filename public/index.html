@@ -64,12 +64,14 @@
   // 👇 THIS switches screens automatically
   auth.onAuthStateChanged((user) => {
     if (user) {
-      loginSection.style.display = "none";
-      appSection.style.display = "block";
-    } else {
-      loginSection.style.display = "block";
-      appSection.style.display = "none";
-    }
+    // User logged in
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("appSection").style.display = "block";
+  } else {
+    // Not logged in
+    document.getElementById("loginSection").style.display = "block";
+    document.getElementById("appSection").style.display = "none";
+  }
   });
 </script>
 
