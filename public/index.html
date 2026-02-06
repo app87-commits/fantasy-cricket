@@ -2,79 +2,214 @@
 <html>
   <head>
     <title>Fantasy Cricket</title>
+    <style>
+      #loginSection,
+      #appSection {
+        display: none;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      select {
+        margin: 5px;
+      }
+      h1,
+      h2 {
+        color: #333;
+      }
+      button {
+        margin: 5px;
+        padding: 5px 10px;
+      }
+    </style>
   </head>
   <body>
-    <!--  LOGIN SECTION -->
+    <!-- 🔐 LOGIN SECTION -->
     <div id="loginSection">
       <h2>Login</h2>
-      <input type="email" id="email" placeholder="Email" />
-      <input type="password" id="password" placeholder="Password" />
+      <input type="email" id="email" placeholder="Email" /><br />
+      <input type="password" id="password" placeholder="Password" /><br />
       <button onclick="login()">Login</button>
       <button onclick="signup()">Sign Up</button>
     </div>
 
-<!-- APP SECTION (HIDDEN UNTIL LOGIN) -->
-    <div id="appSection" style="display:none;"></div>
-    <h1>Fantasy Cricket Team Selection</h1>
-    <button onclick="submitTeam()">Submit Team</button>
-    <button onclick="loadLeaderboard()">Show Leaderboard</button>
-    <button onclick="logout()">Logout</button>
-  </div>
- 
+    <!-- 🏏 APP SECTION -->
+    <div id="appSection">
+      <h1>Fantasy Cricket Team Selection</h1>
 
-<!-- 🔥 Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+      <div id="playerSelection">
+        <!-- Dropdowns will be dynamically added here -->
+      </div>
 
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCPrmDt5lF3k8ztabxakQ7IBHaFaBLb4UA",
-    authDomain: "fantasy-cricket-group.firebaseapp.com",
-    projectId: "fantasy-cricket-group",
-  };
+      <button onclick="submitTeam()">Submit Team</button>
+      <button onclick="loadLeaderboard()">Show Leaderboard</button>
+      <button onclick="logout()">Logout</button>
+    </div>
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  function signup() {
-    auth
-      .createUserWithEmailAndPassword(email.value, password.value)
-      .catch((e) => alert(e.message));
-  }
+    <script>
+      window.onload = function () {
+        // 🔹 Firebase config
+        const firebaseConfig = {
+          apiKey: "AIzaSyCPrmDt5lF3k8ztabxakQ7IBHaFaBLb4UA",
+          authDomain: "fantasy-cricket-group.firebaseapp.com",
+          projectId: "fantasy-cricket-group",
+        };
 
-  function login() {
-    auth
-      .signInWithEmailAndPassword(email.value, password.value)
-      .catch((e) => alert(e.message));
-  }
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-  function logout() {
-    auth.signOut();
-  }
+        // 🔹 Auth functions
+        window.signup = function () {
+          auth
+            .createUserWithEmailAndPassword(email.value, password.value)
+            .catch((e) => alert(e.message));
+        };
 
-  function loadLeaderboard(){
-  fetch('/leaderboard')
-    .then(res=>res.json())
-    .then(data=>{
-      console.log(data);
-      alert("Top score: " + data[0].points);
-    });
-}
+        window.login = function () {
+          auth
+            .signInWithEmailAndPassword(email.value, password.value)
+            .catch((e) => alert(e.message));
+        };
 
-  // 👇 THIS switches screens automatically
-  auth.onAuthStateChanged((user) => {
-    if (user) {
-    // User logged in
-    document.getElementById("loginSection").style.display = "none";
-    document.getElementById("appSection").style.display = "block";
-  } else {
-    // Not logged in
-    document.getElementById("loginSection").style.display = "block";
-    document.getElementById("appSection").style.display = "none";
-  }
-  });
-</script>
+        window.logout = function () {
+          auth.signOut();
+        };
 
+        // 🔹 Load players dynamically
+        async function loadPlayers(team) {
+          const res = await fetch(`/players/${team}`);
+          const players = await res.json();
 
- </body>
+          const container = document.getElementById("playerSelection");
+          let select = document.getElementById(`team-${team}`);
+
+          if (!select) {
+            const h3 = document.createElement("h3");
+            h3.innerText = team;
+            container.appendChild(h3);
+
+            select = document.createElement("select");
+            select.id = `team-${team}`;
+            container.appendChild(select);
+          }
+
+          select.innerHTML = '<option value="">Select player</option>';
+          players.forEach((p) => {
+            const option = document.createElement("option");
+            option.value = p.name;
+            option.text = p.name;
+            option.dataset.foreign = p.isForeign ? "true" : "false";
+            select.add(option);
+          });
+        }
+
+        // 🔹 Submit team
+        window.submitTeam = async function () {
+          const teams = [
+            "MI",
+            "CSK",
+            "RCB",
+            "KKR",
+            "SRH",
+            "DC",
+            "RR",
+            "PBKS",
+            "LSG",
+            "GT",
+          ];
+          let players = [];
+          let foreignCount = 0;
+
+          for (let team of teams) {
+            const select = document.getElementById(`team-${team}`);
+            const name = select.value;
+            const isForeign =
+              select.selectedOptions[0].dataset.foreign === "true";
+
+            if (!name) {
+              alert(`Select a player for ${team}`);
+              return;
+            }
+            if (isForeign) foreignCount++;
+            players.push({
+              name,
+              team,
+              isForeign,
+              draftCount: 0,
+              runs: 0,
+              wickets: 0,
+              catches: 0,
+              result: "No Result",
+            });
+          }
+
+          if (foreignCount > 4) {
+            alert("Only 4 foreign players allowed!");
+            return;
+          }
+
+          const userId = auth.currentUser.uid;
+          await db.collection("teams").doc(userId).set({ players });
+          alert("Team saved!");
+        };
+
+        // 🔹 Load leaderboard
+        window.loadLeaderboard = async function () {
+          const snapshot = await db.collection("teams").get();
+          let leaderboard = [];
+          snapshot.forEach((doc) => {
+            const team = doc.data();
+            let totalPoints = 0;
+            team.players.forEach((p) => {
+              let points = 0;
+              points += p.runs * 1 + p.wickets * 25 + p.catches * 5;
+              points += p.result === "Win" ? 30 : 15;
+              totalPoints += points;
+            });
+            leaderboard.push({ user: doc.id, points: totalPoints });
+          });
+
+          leaderboard.sort((a, b) => b.points - a.points);
+          let msg = "Leaderboard:\n";
+          leaderboard.forEach(
+            (t, i) => (msg += `${i + 1}. ${t.user}: ${t.points} pts\n`),
+          );
+          alert(msg);
+        };
+
+        // 🔹 Show correct section based on login
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("appSection").style.display = "block";
+
+            // Load all IPL teams dynamically
+            const teams = [
+              "MI",
+              "CSK",
+              "RCB",
+              "KKR",
+              "SRH",
+              "DC",
+              "RR",
+              "PBKS",
+              "LSG",
+              "GT",
+            ];
+            teams.forEach((team) => loadPlayers(team));
+          } else {
+            document.getElementById("loginSection").style.display = "block";
+            document.getElementById("appSection").style.display = "none";
+          }
+        });
+      }; // window.onload
+    </script>
+  </body>
 </html>

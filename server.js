@@ -5,6 +5,7 @@ const db = require("./firebase"); // ✅ ADD HERE
 
 app.use(express.json());
 app.use(express.static("public"));
+const CRICKETDATA_KEY = "3e41c403-7151-407e-89b9-1fb2512a6908"; // replace with your key
 
 const fetch = require("node-fetch"); // install: npm install node-fetch
 const PORT = process.env.PORT || 3000;
@@ -61,6 +62,29 @@ app.get("/leaderboard", async (req, res) => {
 
   leaderboard.sort((a, b) => b.points - a.points);
   res.json(leaderboard);
+});
+
+// New endpoint: get players for a team
+app.get("/players/:team", async (req, res) => {
+  try {
+    const team = req.params.team; // e.g., MI, CSK
+    const response = await fetch(
+      `https://api.cricketdata.org/v1/squads/${team}?apikey=${CRICKETDATA_KEY}`,
+    );
+    const data = await response.json();
+
+    // Transform into minimal info for frontend
+    const players = data.players.map((p) => ({
+      name: p.name,
+      country: p.country,
+      isForeign: p.country !== "India",
+    }));
+
+    res.json(players);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error fetching players");
+  }
 });
 
 async function updateMatchStats() {
