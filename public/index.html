@@ -4,56 +4,25 @@
     <title>Fantasy Cricket</title>
   </head>
   <body>
+    <!--  LOGIN SECTION -->
+    <div id="loginSection">
+      <h2>Login</h2>
+      <input type="email" id="email" placeholder="Email" />
+      <input type="password" id="password" placeholder="Password" />
+      <button onclick="login()">Login</button>
+      <button onclick="signup()">Sign Up</button>
+    </div>
+
+<!-- APP SECTION (HIDDEN UNTIL LOGIN) -->
+    <div id="appSection" style="display:none;"></div>
     <h1>Fantasy Cricket Team Selection</h1>
-
-    <!-- Submit Team -->
     <button onclick="submitTeam()">Submit Team</button>
-
-    <!-- Leaderboard Button -->
     <button onclick="loadLeaderboard()">Show Leaderboard</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+ 
 
-    <script>
-      function submitTeam() {
-        fetch("/submitTeam", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            players: [
-              {
-                name: "Rohit",
-                team: "MI",
-                isForeign: false,
-                draftCount: 0,
-                runs: 40,
-                wickets: 0,
-                catches: 1,
-                result: "Win",
-              },
-            ],
-          }),
-        })
-          .then((res) => res.text())
-          .then((data) => alert(data));
-      }
-
-      function loadLeaderboard() {
-        fetch("/leaderboard")
-          .then((res) => res.json())
-          .then((data) => {
-            console.log(data);
-            alert("Top score: " + data[0].points);
-          });
-      }
-    </script>
-  </body>
-</html>
-
-<h2>Login</h2>
-<input type="email" id="email" placeholder="Email" />
-<input type="password" id="password" placeholder="Password" />
-<button onclick="login()">Login</button>
-<button onclick="signup()">Sign Up</button>
-
+<!-- 🔥 Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
@@ -63,24 +32,47 @@
     authDomain: "fantasy-cricket-group.firebaseapp.com",
     projectId: "fantasy-cricket-group",
   };
+
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
 
   function signup() {
-    const email = document.getElementById("email").value;
-    const pass = document.getElementById("password").value;
     auth
-      .createUserWithEmailAndPassword(email, pass)
-      .then((user) => alert("Signed Up!"))
-      .catch((err) => alert(err.message));
+      .createUserWithEmailAndPassword(email.value, password.value)
+      .catch((e) => alert(e.message));
   }
 
   function login() {
-    const email = document.getElementById("email").value;
-    const pass = document.getElementById("password").value;
     auth
-      .signInWithEmailAndPassword(email, pass)
-      .then((user) => alert("Logged In!"))
-      .catch((err) => alert(err.message));
+      .signInWithEmailAndPassword(email.value, password.value)
+      .catch((e) => alert(e.message));
   }
+
+  function logout() {
+    auth.signOut();
+  }
+
+  function loadLeaderboard(){
+  fetch('/leaderboard')
+    .then(res=>res.json())
+    .then(data=>{
+      console.log(data);
+      alert("Top score: " + data[0].points);
+    });
+}
+
+  // 👇 THIS switches screens automatically
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      loginSection.style.display = "none";
+      appSection.style.display = "block";
+    } else {
+      loginSection.style.display = "block";
+      appSection.style.display = "none";
+    }
+  });
 </script>
+
+
+ </body>
+</html>
