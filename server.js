@@ -69,36 +69,11 @@ app.get("/players/:team", async (req, res) => {
   try {
     const team = req.params.team; // e.g., MI, CSK
     const response = await fetch(
-      `https://api.cricketdata.org/v1/squads/${team}?apikey=${CRICKETDATA_KEY}`,
+      `https://api.cricapi.com/v1/series?apikey=${CRICKETDATA_KEY}&offset=0&search=IPL`,
     );
     const data = await response.json();
-
-    // Transform into minimal info for frontend
-    const players = data.players.map((p) => ({
-      name: p.name,
-      country: p.country,
-      isForeign: p.country !== "India",
-    }));
-
-    res.json(players);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Error fetching players");
+    console.error("ERROR:", err);
+    res.status(500).send("Server Error");
   }
 });
-
-async function updateMatchStats() {
-  const response = await fetch(
-    "https://cricapi.com/api/matchScorecard?apikey=YOURKEY&id=MATCHID",
-  );
-  const data = await response.json();
-
-  // Loop players → update Firebase
-  for (let player of data.players) {
-    let points = calculatePoints(player);
-    await db
-      .collection("teams")
-      .doc(player.teamDocId)
-      .update({ points: points });
-  }
-}
